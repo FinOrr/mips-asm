@@ -81,8 +81,9 @@ lw	$s1, 4($a2)		# Save argument matrix cols to $s1
 move 	$t0, $s0		# Load the row pointer
 move	$t1, $s1		# Load the column pointer
 addi	$a2, $a2, 8		# Move the memory pointer to an empty data segment
-li	$v0, 42			# Syscall: Generate random value
-addi	$a1, $zero, 15		# Set upper bound of random number to 15 
+li 	$v0, 30			# Syscall to get the system time
+syscall
+andi	$a0, $v0, 0x000F	# use the last 4 bits as a random number from 0 to 15
 populateRow:
 li 	$a0, 0			# Clear the random number 
 syscall				# Generate random value into $a0
@@ -102,6 +103,8 @@ lw	$t0, 0($a1)		# t0	<- mat1.rows
 lw	$t1, 4($a2)		# t1	<- mat2.cols
 sw	$t0, 0($a3)		# Res 	<- mat1.rows
 sw	$t1, 4($a3)		# Res 	<- mat2.cols
+li      $t2, 0  # Initialise $t2 to 0
+li      $t3, 0  # Initialise $t3 to 0
 addi	$a3, $a3, 8		# Move Res memory pointer past row/cols
 sw	$ra, -4($sp)		# Store return address on stack
 nextElement:
@@ -122,6 +125,7 @@ mul 	$s2, $t6, $t2		# s2	<- Row Start Index (=counter * width in bytes)
 mul 	$s3, $t3, 4		# s3	<- Column start index (=counter * size of col in bytes)
 add 	$t7, $s2, $t7		# t7	<- First mat1.val address in the desired row
 add 	$t8, $s3, $t8		# t8	<- First mat2.val address in the desired column
+li      $t4, 0  # Initialise $t4 to 0
 li	$s2, 0			# Reset row start index
 mul 	$s2, $t0, 4		# s2	<- Set rsi to mat1 width
 dotProduct:
@@ -165,5 +169,6 @@ addi 	$t4, $t4, 1		# Increment column counter
 addi 	$t3, $t3, 1		# Increment element counter
 addi 	$a1, $a1, 4		# Move memory pointer to next element in array
 printLoopC: 
+blt 	$t4, $t1, inTheRow	# Check if end of row
 blt 	$t3, $t2, printLoop	# Check if end of array
 jr 	$ra   			# A function ends with jr instruction
